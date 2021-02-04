@@ -189,31 +189,39 @@ module.exports = NodeHelper.create({
 	},
 
 	startSession: async function (camera, type) {
-		if (this.sipSession || this.sessionRunning === true) {
+		switch (type) {
+			case 'ring':
+				this.sendSocketNotification('DOORBELL_RINGING');
+				break;
+			case 'motion':
+				this.sendSocketNotification('MOTION_DETECTED');
+				break;
+		}
+
+		if (this.sipSession || this.sessionRunning) {
 			return;
 		}
 
 		this.sessionRunning = true;
-		if (type === 'ring') {
-			this.toLog(
-				`${camera.name} had its doorbell rung! Preparing video stream.`
-			);
-			if (this.config.ringWakesUpScreen) {
-				this.sendSocketNotification('SCREEN_WAKEUP');
-			}
-			this.sendSocketNotification('DOORBELL_RINGING');
-		} else if (type === 'motion') {
-			this.toLog(
-				`${camera.name} has sensed motion Preparing video stream.`
-			);
-			if (this.config.ringWakesUpScreen) {
-				this.sendSocketNotification('SCREEN_WAKEUP');
-			}
-			this.sendSocketNotification('MOTION_DETECTED');
-		} else {
-			this.toLog(
-				`${camera.name} been summoned by something other than a ring or motion. (spooky) Preparing video stream.`
-			);
+		switch (type) {
+			case 'ring':
+				this.toLog(
+					`${camera.name} had its doorbell rung! Preparing video stream.`
+				);
+				break;
+			case 'motion':
+				this.toLog(
+					`${camera.name} has sensed motion Preparing video stream.`
+				);
+				break;
+			default:
+				this.toLog(
+					`${camera.name} been summoned by something other than a ring or motion. (spooky) Preparing video stream.`
+				);
+		}
+
+		if (this.config.ringWakesUpScreen) {
+			this.sendSocketNotification('SCREEN_WAKEUP');
 		}
 
 		await this.cleanUpVideoStreamDirectory();
